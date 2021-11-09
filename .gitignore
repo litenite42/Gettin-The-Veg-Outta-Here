@@ -1,0 +1,8 @@
+# Binaries for programs and plugins
+main
+buggin_the_veg_outta_here
+*.exe
+*.exe~
+*.so
+*.dylib
+*.dll
