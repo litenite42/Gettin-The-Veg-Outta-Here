@@ -29,3 +29,7 @@ pub fn (p Player) bounds() eng.BoundingShape {
 		height: p.size.height
 	}
 }
+
+pub fn (mut p Player) impulse(impulse eng.Vec2D) {
+	p.impulse = impulse
+}

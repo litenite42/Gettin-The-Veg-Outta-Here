@@ -8,8 +8,9 @@ import engine as eng
 import models
 
 const (
-	win_width  = 600
-	win_height = 300
+	win_width     = 600
+	win_height    = 300
+	default_force = eng.Vec2D{1, 1}
 )
 
 enum Layer {
@@ -48,6 +49,16 @@ mut:
 	layers   map[Layer][]int
 }
 
+fn (app App) player() ?&models.Player {
+	ids := app.layers[.player]
+	obj := app.objects[ids[0]]
+
+	if obj is models.Player {
+		return obj
+	}
+	return none
+}
+
 fn main() {
 	mut app := &App{
 		gg: 0
@@ -57,14 +68,16 @@ fn main() {
 		width: win_width
 		height: win_height
 		create_window: true
-		window_title: 'Rectangles'
+		window_title: 'Buggin the Veg Outta Here'
 		frame_fn: frame
+		keydown_fn: on_keydown
+		keyup_fn: on_keyup
 		user_data: app
 		init_fn: init_images
 	)
 
-	mut player := new_game_object(.player, eng.Vec2D{1, 0},
-		id: 0
+	mut player := new_game_object(.player, eng.Vec2D{1, 1},
+		id: app.curr_ndx++
 		size: gg.Size{
 			width: 20
 			height: 20
@@ -101,5 +114,25 @@ fn (mut app App) update() {
 fn (app &App) draw() {
 	for _, elem in app.objects {
 		elem.draw()
+	}
+}
+
+fn on_keyup(key gg.KeyCode, mod gg.Modifier, mut app App) {
+	mut player := app.player() or { return }
+	match key {
+		.w, .up {
+			player.impulse(default_force)
+		}
+		else {}
+	}
+}
+
+fn on_keydown(key gg.KeyCode, mod gg.Modifier, mut app App) {
+	mut player := app.player() or { return }
+	match key {
+		.w, .up {
+			player.impulse(x: 1, y: -3)
+		}
+		else {}
 	}
 }
