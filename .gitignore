@@ -6,3 +6,4 @@ buggin_the_veg_outta_here
 *.so
 *.dylib
 *.dll
+*.*~
