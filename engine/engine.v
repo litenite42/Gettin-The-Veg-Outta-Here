@@ -14,7 +14,9 @@ pub:
 	y f32
 }
 
-pub type Rect = gg.Rect
+pub struct Rect {
+	gg.Rect
+}
 
 pub fn (r Rect) to_bounding() (Point2D, Point2D) {
 	return Point2D{r.x, r.y}, Point2D{r.x+r.width,r.y+r.height}
@@ -25,19 +27,28 @@ pub fn (r Rect) overlaps(test Rect) bool {
 	l2,r2 := test.to_bounding()
 	
 	if l1.x == r1.x || l1.y == r1.y || l2.x == r2.x || l2.y == r2.y {
-						return false
-						}
-					
-					 if l1.x >= r2.x || l2.x >= r1.x {
-						return false
-						}
-					if r1.y >= l2.y || l1.y >= r2.y {
-						return false
-						}
-						return true
+		return false
+	}
+
+	 if l1.x >= r2.x || l2.x >= r1.x {
+		return false
+	}
+	if r1.y >= l2.y || l1.y >= r2.y {
+		return false
+	}
+	return true
 }
 
-pub type BoundingShape = gg.Rect | Rect
+pub fn new_rect(x f32, y f32, w f32, h f32) Rect {
+	return Rect {
+		x: x
+		y: y
+		width: w
+		height: h
+	}
+}
+
+pub type BoundingShape = Rect | gg.Rect
 
 pub fn overlap(s1 BoundingShape, s2 BoundingShape) bool {
 	match s1 {
@@ -57,7 +68,12 @@ pub fn overlap(s1 BoundingShape, s2 BoundingShape) bool {
 }
 
 pub interface ObjectCollider {
-	bounds() BoundingShape
+	bounding_shape BoundingShape
+	is_collider() bool
+}
+
+pub fn (o ObjectCollider) bounds() BoundingShape {
+	return o.bounding_shape
 }
 
 pub struct GameObjectEmbed {

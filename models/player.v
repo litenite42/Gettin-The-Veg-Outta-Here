@@ -7,6 +7,19 @@ import engine as eng
 
 pub struct Player {
 	eng.GameObjectEmbed
+	mut:
+	bounding_shape eng.BoundingShape
+}
+
+pub fn new_player(impulse eng.Vec2D, shape eng.BoundingShape, object eng.GameObjectEmbed) Player {
+	return Player{
+		id: object.id
+				gg: object.gg
+				impulse: impulse
+				position: object.position
+				size: object.size
+				bounding_shape: shape
+	}
 }
 
 pub fn (p Player) draw() {
@@ -16,15 +29,12 @@ pub fn (p Player) draw() {
 pub fn (mut p Player) update() {
 	p.position.x += p.impulse.x
 	p.position.y += p.impulse.y
+	
+	p.bounding_shape = eng.new_rect(p.bounding_shape.x + p.impulse.x, p.bounding_shape.y + p.impulse.y, p.bounding_shape.width, p.bounding_shape.height)
 }
 
-pub fn (p Player) bounds() eng.BoundingShape {
-	return eng.Rect{
-		x: p.position.x
-		y: p.position.y
-		width: p.size.width
-		height: p.size.height
-	}
+pub fn (p Player) is_collider() bool {
+	return true
 }
 
 pub fn (mut p Player) impulse(impulse eng.Vec2D) {
