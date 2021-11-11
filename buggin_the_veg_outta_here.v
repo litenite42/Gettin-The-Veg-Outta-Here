@@ -22,22 +22,35 @@ enum Layer {
 }
 
 fn new_game_object(layer Layer, impulse eng.Vec2D, object eng.GameObjectEmbed) eng.GameObject {
-	x := match layer {
+	// mut x := eng.GameObject(0)
+	 match layer {
 		.player {
-			models.Player{
+			x := models.Player{
 				id: object.id
 				gg: object.gg
 				impulse: impulse
 				position: object.position
 				size: object.size
 			}
+			return eng.GameObject(x) 
+		}
+		.ground {
+			x := models.Ground{
+				id: object.id
+				gg: object.gg
+				impulse: impulse
+				position: object.position
+				size: object.size
+			}
+			
+			return eng.GameObject(x)
 		}
 		else {
-			models.Player{}
+			return eng.GameObject(models.Player{})
 		}
 	}
 
-	return eng.GameObject(x)
+	// return x
 }
 
 struct App {
@@ -76,7 +89,17 @@ fn main() {
 		init_fn: init_images
 	)
 
-	mut player := new_game_object(.player, eng.Vec2D{1, 1},
+	app.image = app.gg.create_image(os.resource_abs_path('logo.png'))
+	app.init_world()
+	app.gg.run()
+}
+
+fn init_images(mut app App) {
+	// app.image = gg.create_image('logo.png')
+}
+
+pub fn (mut app App) init_world(){
+	mut player := new_game_object(.player, eng.Vec2D{0, 1},
 		id: app.curr_ndx++
 		size: gg.Size{
 			width: 20
@@ -88,14 +111,14 @@ fn main() {
 		}
 		gg: app.gg
 	)
-	app.image = app.gg.create_image(os.resource_abs_path('logo.png'))
+	
 	app.layers[.player] << player.id
 	app.objects[player.id] = player
-	app.gg.run()
-}
 
-fn init_images(mut app App) {
-	// app.image = gg.create_image('logo.png')
+	mut ground := new_game_object(.ground, eng.Vec2D{-1,0}, id: app.curr_ndx++ size: gg.Size{ width: win_width, height: 100 } position: eng.Point2D{x: 0, y: win_height - 100} gg: app.gg)
+	
+	app.layers[.ground] << ground.id
+	app.objects[ground.id] = ground
 }
 
 fn frame(mut app App) {
@@ -106,9 +129,27 @@ fn frame(mut app App) {
 }
 
 fn (mut app App) update() {
+	mut player := app.player() or {return}
+	pbounds := player.bounds()
+	println(pbounds)
 	for _, mut elem in app.objects {
+		if elem.id in app.layers[.player] {
+			continue
+		}
 		elem.update()
+		
+		if elem is models.Ground {
+				gbounds := elem.bounds()
+				
+				if eng.overlap(pbounds,gbounds) {
+					player.impulse(x: 0, y: 0)
+				}
+			
+		}
 	}
+	player.update()
+	
+	 
 }
 
 fn (app &App) draw() {
@@ -131,7 +172,7 @@ fn on_keydown(key gg.KeyCode, mod gg.Modifier, mut app App) {
 	mut player := app.player() or { return }
 	match key {
 		.w, .up {
-			player.impulse(x: 1, y: -3)
+			player.impulse(x: 1, y: -5)
 		}
 		else {}
 	}
