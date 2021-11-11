@@ -22,10 +22,10 @@ enum Layer {
 }
 
 fn new_game_object(layer Layer, impulse eng.Vec2D, shape eng.BoundingShape, object eng.GameObjectEmbed) eng.GameObject {
-	 match layer {
+	match layer {
 		.player {
 			x := models.new_player(impulse, shape, object)
-			return eng.GameObject(x) 
+			return eng.GameObject(x)
 		}
 		.ground {
 			x := models.Ground{
@@ -36,7 +36,7 @@ fn new_game_object(layer Layer, impulse eng.Vec2D, shape eng.BoundingShape, obje
 				size: object.size
 				bounding_shape: shape
 			}
-			
+
 			return eng.GameObject(x)
 		}
 		else {
@@ -92,8 +92,9 @@ fn init_images(mut app App) {
 	// app.image = gg.create_image('logo.png')
 }
 
-pub fn (mut app App) init_world(){
-	mut player := new_game_object(.player, eng.Vec2D{0, 1}, eng.new_rect(win_width/2, win_height - 130,20,20),
+pub fn (mut app App) init_world() {
+	mut player := new_game_object(.player, eng.Vec2D{0, 1}, eng.new_rect(win_width / 2,
+		win_height - 130, 20, 20),
 		id: app.curr_ndx++
 		size: gg.Size{
 			width: 20
@@ -105,12 +106,28 @@ pub fn (mut app App) init_world(){
 		}
 		gg: app.gg
 	)
-	
+
 	app.layers[.player] << player.id
 	app.objects[player.id] = player
 
-	mut ground := new_game_object(.ground, eng.Vec2D{-1,0}, eng.Rect{x: win_width / 2, y: win_height - 100, width: win_width / 2, height: 100}, id: app.curr_ndx++ size: gg.Size{ width: win_width, height: 100 } position: eng.Point2D{x: 0, y: win_height - 100} gg: app.gg)
-	
+	mut ground := new_game_object(.ground, eng.Vec2D{-1, 0}, eng.Rect{
+		x: win_width / 2
+		y: win_height - 100
+		width: win_width / 2
+		height: 100
+	},
+		id: app.curr_ndx++
+		size: gg.Size{
+			width: win_width
+			height: 100
+		}
+		position: eng.Point2D{
+			x: 0
+			y: win_height - 100
+		}
+		gg: app.gg
+	)
+
 	app.layers[.ground] << ground.id
 	app.objects[ground.id] = ground
 }
@@ -123,10 +140,10 @@ fn frame(mut app App) {
 }
 
 fn (mut app App) update() {
-	mut player := app.player() or {return}
-	mut pbounds := eng.BoundingShape(eng.Rect{})// player.bounds()
-		p := eng.ObjectCollider(player)
-		pbounds = p.bounds() 
+	mut player := app.player() or { return }
+	mut pbounds := eng.BoundingShape(eng.Rect{}) // player.bounds()
+	p := eng.ObjectCollider(player)
+	pbounds = p.bounds()
 	print('p ')
 	println(pbounds)
 	for _, mut elem in app.objects {
@@ -136,20 +153,18 @@ fn (mut app App) update() {
 		elem.update()
 		x := elem
 		if x is models.Ground {
-		mut gbounds := eng.BoundingShape(eng.Rect{})
-		g := eng.ObjectCollider(x)
+			mut gbounds := eng.BoundingShape(eng.Rect{})
+			g := eng.ObjectCollider(x)
 			gbounds = g.bounds()
 			print('g ')
 			println(gbounds)
 			if eng.overlap(gbounds, pbounds) {
-				//panic('Collided')
+				// panic('Collided')
 				player.impulse(x: 0, y: 0)
 			}
 		}
 	}
 	player.update()
-	
-	 
 }
 
 fn (app &App) draw() {

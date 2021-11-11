@@ -19,18 +19,18 @@ pub struct Rect {
 }
 
 pub fn (r Rect) to_bounding() (Point2D, Point2D) {
-	return Point2D{r.x, r.y}, Point2D{r.x+r.width,r.y+r.height}
+	return Point2D{r.x, r.y}, Point2D{r.x + r.width, r.y + r.height}
 }
 
 pub fn (r Rect) overlaps(test Rect) bool {
-	l1,r1 := r.to_bounding()
-	l2,r2 := test.to_bounding()
-	
+	l1, r1 := r.to_bounding()
+	l2, r2 := test.to_bounding()
+
 	if l1.x == r1.x || l1.y == r1.y || l2.x == r2.x || l2.y == r2.y {
 		return false
 	}
 
-	 if l1.x >= r2.x || l2.x >= r1.x {
+	if l1.x >= r2.x || l2.x >= r1.x {
 		return false
 	}
 	if r1.y >= l2.y || l1.y >= r2.y {
@@ -40,7 +40,7 @@ pub fn (r Rect) overlaps(test Rect) bool {
 }
 
 pub fn new_rect(x f32, y f32, w f32, h f32) Rect {
-	return Rect {
+	return Rect{
 		x: x
 		y: y
 		width: w
@@ -56,11 +56,13 @@ pub fn overlap(s1 BoundingShape, s2 BoundingShape) bool {
 			match s2 {
 				Rect {
 					return s1.overlaps(s2)
-				} else {
+				}
+				else {
 					return false
 				}
 			}
-		} else {
+		}
+		else {
 			return false
 		}
 	}
