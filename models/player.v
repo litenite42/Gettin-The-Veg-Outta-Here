@@ -15,7 +15,7 @@ pub fn new_player(impulse eng.Vec2D, shape eng.BoundingShape, object eng.GameObj
 	return Player{
 		id: object.id
 		gg: object.gg
-		impulse: impulse
+		forces: [impulse]
 		position: object.position
 		size: object.size
 		bounding_shape: shape
@@ -24,20 +24,24 @@ pub fn new_player(impulse eng.Vec2D, shape eng.BoundingShape, object eng.GameObj
 
 pub fn (p Player) draw() {
 	p.gg.draw_rect(p.position.x, p.position.y, p.size.width, p.size.height, gx.black)
+	p.gg.draw_empty_rect(p.bounding_shape.x, p.bounding_shape.y, p.bounding_shape.width,
+		p.bounding_shape.height, gx.green)
 }
 
 pub fn (mut p Player) update() {
-	p.position.x += p.impulse.x
-	p.position.y += p.impulse.y
+	net_impulse := eng.GameObject(p).net_impulse()
+	println(net_impulse)
+	p.position.x += net_impulse.x
+	p.position.y += net_impulse.y
 
-	p.bounding_shape = eng.new_rect(p.bounding_shape.x + p.impulse.x, p.bounding_shape.y +
-		p.impulse.y, p.bounding_shape.width, p.bounding_shape.height)
+	p.bounding_shape = eng.new_rect(p.bounding_shape.x + net_impulse.x, p.bounding_shape.y +
+		net_impulse.y, p.bounding_shape.width, p.bounding_shape.height)
 }
 
 pub fn (p Player) is_collider() bool {
 	return true
 }
 
-pub fn (mut p Player) impulse(impulse eng.Vec2D) {
-	p.impulse = impulse
-}
+// pub fn (mut p Player) impulse(impulse eng.Vec2D) {
+// 	p.impulse = impulse
+// }

@@ -9,7 +9,7 @@ pub mut:
 }
 
 pub struct Vec2D {
-pub:
+pub mut:
 	x f32
 	y f32
 }
@@ -30,13 +30,10 @@ pub fn (r Rect) overlaps(test Rect) bool {
 		return false
 	}
 
-	if l1.x >= r2.x || l2.x >= r1.x {
-		return false
+	if l1.x <= r2.x && r1.x >= l2.x && l1.y <= r2.y && r1.y >= l2.y {
+		return true
 	}
-	if r1.y >= l2.y || l1.y >= r2.y {
-		return false
-	}
-	return true
+	return false
 }
 
 pub fn new_rect(x f32, y f32, w f32, h f32) Rect {
@@ -82,6 +79,7 @@ pub struct GameObjectEmbed {
 pub:
 	id int
 pub mut:
+	forces   []Vec2D
 	gg       &gg.Context
 	impulse  Vec2D
 	position Point2D
@@ -93,14 +91,51 @@ pub interface GameObject {
 	draw()
 mut:
 	gg &gg.Context
-	impulse Vec2D
+	forces []Vec2D
 	position Point2D
 	size gg.Size
 	update()
 }
 
+pub fn (mut g GameObject) impulse(impulse Vec2D) {
+	g.forces << impulse
+}
+
+pub fn (mut g GameObject) rmv_impulse(impulse Vec2D, n int) {
+	mut ndxs := []int{cap: 10}
+	for i, val in g.forces {
+		if val.x == impulse.x && val.y == impulse.y {
+			ndxs << i
+		}
+
+		if ndxs.len == n {
+			break
+		}
+	}
+
+	for i in ndxs {
+		g.forces.delete(i)
+	}
+}
+
+pub fn (mut g GameObject) clear_forces() {
+	g.forces.clear()
+}
+
+pub fn (g GameObject) net_impulse() Vec2D {
+	mut net_impulse := Vec2D{}
+
+	for force in g.forces {
+		net_impulse.x += force.x
+		net_impulse.y += force.y
+	}
+
+	return net_impulse
+}
+
 pub fn (g GameObject) str() string {
-	return 'GmObj #$g.id: imp($g.impulse.x,$g.impulse.y) pos($g.position.x,$g.position.y) size($g.size.width, $g.size.height)'
+	impulse := g.net_impulse()
+	return 'GmObj #$g.id: imp($impulse.x,$impulse.y) pos($g.position.x,$g.position.y) size($g.size.width, $g.size.height)'
 }
 
 pub interface Kinematic {

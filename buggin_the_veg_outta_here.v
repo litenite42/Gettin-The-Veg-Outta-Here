@@ -11,6 +11,7 @@ const (
 	win_width     = 600
 	win_height    = 300
 	default_force = eng.Vec2D{1, 1}
+	jump_force    = eng.Vec2D{1, -5}
 )
 
 enum Layer {
@@ -93,8 +94,8 @@ fn init_images(mut app App) {
 }
 
 pub fn (mut app App) init_world() {
-	mut player := new_game_object(.player, eng.Vec2D{0, 1}, eng.new_rect(win_width / 2,
-		win_height - 130, 20, 20),
+	mut player := new_game_object(.player, eng.Vec2D{0, 1}, eng.new_rect(30, 30, 20, 20),
+		
 		id: app.curr_ndx++
 		size: gg.Size{
 			width: 20
@@ -111,9 +112,9 @@ pub fn (mut app App) init_world() {
 	app.objects[player.id] = player
 
 	mut ground := new_game_object(.ground, eng.Vec2D{-1, 0}, eng.Rect{
-		x: win_width / 2
+		x: 0
 		y: win_height - 100
-		width: win_width / 2
+		width: win_width
 		height: 100
 	},
 		id: app.curr_ndx++
@@ -144,8 +145,8 @@ fn (mut app App) update() {
 	mut pbounds := eng.BoundingShape(eng.Rect{}) // player.bounds()
 	p := eng.ObjectCollider(player)
 	pbounds = p.bounds()
-	print('p ')
-	println(pbounds)
+	// print('p ')
+	// println(pbounds)
 	for _, mut elem in app.objects {
 		if elem.id in app.layers[.player] {
 			continue
@@ -156,11 +157,13 @@ fn (mut app App) update() {
 			mut gbounds := eng.BoundingShape(eng.Rect{})
 			g := eng.ObjectCollider(x)
 			gbounds = g.bounds()
-			print('g ')
-			println(gbounds)
+			// print('g ')
+			// println(gbounds)
 			if eng.overlap(gbounds, pbounds) {
-				// panic('Collided')
-				player.impulse(x: 0, y: 0)
+				println('collided')
+				mut xplayer := eng.GameObject(player)
+
+				xplayer.clear_forces()
 			}
 		}
 	}
@@ -174,20 +177,27 @@ fn (app &App) draw() {
 }
 
 fn on_keyup(key gg.KeyCode, mod gg.Modifier, mut app App) {
-	mut player := app.player() or { return }
+	// mut player := app.player() or { return }
+	id := app.layers[.player][0]
+	mut player := app.objects[id]
+
 	match key {
 		.w, .up {
 			player.impulse(default_force)
+			player.rmv_impulse(jump_force, 1)
 		}
 		else {}
 	}
 }
 
 fn on_keydown(key gg.KeyCode, mod gg.Modifier, mut app App) {
-	mut player := app.player() or { return }
+	// 	mut player := app.player() or { return }
+	id := app.layers[.player][0]
+	mut player := app.objects[id]
 	match key {
 		.w, .up {
-			player.impulse(x: 1, y: -5)
+			player.impulse(jump_force)
+			player.rmv_impulse(default_force, 1)
 		}
 		else {}
 	}
