@@ -10,8 +10,10 @@ import models
 const (
 	win_width     = 600
 	win_height    = 300
-	default_force = eng.Vec2D{1, 1}
-	jump_force    = eng.Vec2D{1, -5}
+	default_force = eng.Vec2D{0, 1}
+	jump_force    = eng.Vec2D{0, -15}
+	player_grav_tag = 'pgrav'
+	player_jump_tag = 'pjump'
 )
 
 enum Layer {
@@ -22,17 +24,18 @@ enum Layer {
 	air
 }
 
-fn new_game_object(layer Layer, impulse eng.Vec2D, shape eng.BoundingShape, object eng.GameObjectEmbed) eng.GameObject {
+fn new_game_object(layer Layer, impulse_tag string, impulse eng.Vec2D, shape eng.BoundingShape, object eng.GameObjectEmbed) eng.GameObject {
 	match layer {
 		.player {
-			x := models.new_player(impulse, shape, object)
+			x := models.new_player(impulse_tag, impulse, shape, object)
 			return eng.GameObject(x)
 		}
 		.ground {
 			x := models.Ground{
 				id: object.id
 				gg: object.gg
-				impulse: impulse
+				forces: map{impulse_tag: impulse}
+				
 				position: object.position
 				size: object.size
 				bounding_shape: shape
@@ -44,8 +47,6 @@ fn new_game_object(layer Layer, impulse eng.Vec2D, shape eng.BoundingShape, obje
 			return eng.GameObject(models.Player{})
 		}
 	}
-
-	// return x
 }
 
 struct App {
@@ -94,24 +95,23 @@ fn init_images(mut app App) {
 }
 
 pub fn (mut app App) init_world() {
-	mut player := new_game_object(.player, eng.Vec2D{0, 1}, eng.new_rect(30, 30, 20, 20),
-		
+	mut player := new_game_object(.player, player_grav_tag, eng.Vec2D{1, 1}, eng.new_rect(80, win_height - 100 - 50, 20, 20),
 		id: app.curr_ndx++
 		size: gg.Size{
 			width: 20
 			height: 20
 		}
 		position: eng.Point2D{
-			x: 30
-			y: 30
+			x: 80
+			y: win_height - 100 - 50
 		}
 		gg: app.gg
 	)
-
+    
 	app.layers[.player] << player.id
 	app.objects[player.id] = player
-
-	mut ground := new_game_object(.ground, eng.Vec2D{-1, 0}, eng.Rect{
+    
+	mut ground := new_game_object(.ground, 'default', eng.Vec2D{0, 0}, eng.Rect{
 		x: 0
 		y: win_height - 100
 		width: win_width
@@ -142,11 +142,12 @@ fn frame(mut app App) {
 
 fn (mut app App) update() {
 	mut player := app.player() or { return }
-	mut pbounds := eng.BoundingShape(eng.Rect{}) // player.bounds()
+	mut pbounds := eng.BoundingShape(eng.Rect{})
 	p := eng.ObjectCollider(player)
+	
+	player.update()
 	pbounds = p.bounds()
-	// print('p ')
-	// println(pbounds)
+	
 	for _, mut elem in app.objects {
 		if elem.id in app.layers[.player] {
 			continue
@@ -157,17 +158,23 @@ fn (mut app App) update() {
 			mut gbounds := eng.BoundingShape(eng.Rect{})
 			g := eng.ObjectCollider(x)
 			gbounds = g.bounds()
-			// print('g ')
-			// println(gbounds)
 			if eng.overlap(gbounds, pbounds) {
-				println('collided')
-				mut xplayer := eng.GameObject(player)
-
-				xplayer.clear_forces()
+				if player.is_in_air() {
+                    player.toggle_in_air(false)  
+                }
 			}
 		}
 	}
-	player.update()
+	
+	mut gmo := eng.GameObject(player)
+	if player.is_in_air() {
+        if player_grav_tag !in player.forces.keys() {
+            gmo.impulse(player_grav_tag, default_force)
+            gmo.rmv_impulse(player_jump_tag)
+        }
+	} else {
+        gmo.clear_forces()
+	}	
 }
 
 fn (app &App) draw() {
@@ -177,27 +184,20 @@ fn (app &App) draw() {
 }
 
 fn on_keyup(key gg.KeyCode, mod gg.Modifier, mut app App) {
-	// mut player := app.player() or { return }
-	id := app.layers[.player][0]
-	mut player := app.objects[id]
 
-	match key {
-		.w, .up {
-			player.impulse(default_force)
-			player.rmv_impulse(jump_force, 1)
-		}
-		else {}
-	}
 }
 
 fn on_keydown(key gg.KeyCode, mod gg.Modifier, mut app App) {
-	// 	mut player := app.player() or { return }
-	id := app.layers[.player][0]
-	mut player := app.objects[id]
+	mut xplayer := app.player() or {return}
 	match key {
 		.w, .up {
-			player.impulse(jump_force)
-			player.rmv_impulse(default_force, 1)
+            mut player := eng.GameObject(xplayer)
+			if !xplayer.is_in_air() && player_jump_tag !in player.forces.keys() {
+                player.impulse(player_jump_tag, jump_force)
+                player.rmv_impulse(player_grav_tag)
+                
+                xplayer.toggle_in_air(true)
+			}
 		}
 		else {}
 	}

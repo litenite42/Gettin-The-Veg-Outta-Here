@@ -79,7 +79,7 @@ pub struct GameObjectEmbed {
 pub:
 	id int
 pub mut:
-	forces   []Vec2D
+	forces   map[string]Vec2D
 	gg       &gg.Context
 	impulse  Vec2D
 	position Point2D
@@ -91,41 +91,32 @@ pub interface GameObject {
 	draw()
 mut:
 	gg &gg.Context
-	forces []Vec2D
+	forces map[string]Vec2D
 	position Point2D
 	size gg.Size
 	update()
 }
 
-pub fn (mut g GameObject) impulse(impulse Vec2D) {
-	g.forces << impulse
+pub fn (mut g GameObject) impulse(tag string, impulse Vec2D) {
+	g.forces[tag] = impulse
 }
 
-pub fn (mut g GameObject) rmv_impulse(impulse Vec2D, n int) {
-	mut ndxs := []int{cap: 10}
-	for i, val in g.forces {
-		if val.x == impulse.x && val.y == impulse.y {
-			ndxs << i
-		}
-
-		if ndxs.len == n {
-			break
-		}
-	}
-
-	for i in ndxs {
-		g.forces.delete(i)
+pub fn (mut g GameObject) rmv_impulse(tag string) {
+	if tag in g.forces {
+		g.forces.delete(tag)
 	}
 }
 
 pub fn (mut g GameObject) clear_forces() {
-	g.forces.clear()
+	for i in g.forces.keys() {
+		g.forces.delete(i)
+	}
 }
 
 pub fn (g GameObject) net_impulse() Vec2D {
 	mut net_impulse := Vec2D{}
 
-	for force in g.forces {
+	for i, force in g.forces {
 		net_impulse.x += force.x
 		net_impulse.y += force.y
 	}

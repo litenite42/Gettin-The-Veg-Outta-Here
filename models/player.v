@@ -9,17 +9,28 @@ pub struct Player {
 	eng.GameObjectEmbed
 mut:
 	bounding_shape eng.BoundingShape
+	in_air         bool = true
 }
 
-pub fn new_player(impulse eng.Vec2D, shape eng.BoundingShape, object eng.GameObjectEmbed) Player {
+pub fn new_player(impulse_tag string, impulse eng.Vec2D, shape eng.BoundingShape, object eng.GameObjectEmbed) Player {
 	return Player{
 		id: object.id
 		gg: object.gg
-		forces: [impulse]
+		forces: {
+			impulse_tag: impulse
+		}
 		position: object.position
 		size: object.size
 		bounding_shape: shape
 	}
+}
+
+pub fn (p Player) is_in_air() bool {
+	return p.in_air
+}
+
+pub fn (mut p Player) toggle_in_air(val bool) {
+	p.in_air = val
 }
 
 pub fn (p Player) draw() {
@@ -29,8 +40,9 @@ pub fn (p Player) draw() {
 }
 
 pub fn (mut p Player) update() {
+	mut gmo := eng.GameObject(p)
 	net_impulse := eng.GameObject(p).net_impulse()
-	println(net_impulse)
+	
 	p.position.x += net_impulse.x
 	p.position.y += net_impulse.y
 
@@ -41,7 +53,3 @@ pub fn (mut p Player) update() {
 pub fn (p Player) is_collider() bool {
 	return true
 }
-
-// pub fn (mut p Player) impulse(impulse eng.Vec2D) {
-// 	p.impulse = impulse
-// }
