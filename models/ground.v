@@ -13,6 +13,19 @@ mut:
 	bounding_shape eng.BoundingShape
 }
 
+pub fn new_ground(impulse_tag string, impulse eng.Vec2D, shape eng.BoundingShape, object eng.GameObjectEmbed) Ground {
+	return Ground{
+		id: object.id
+		gg: object.gg
+		forces: {
+			impulse_tag: impulse
+		}
+		position: object.position
+		size: object.size
+		bounding_shape: shape
+	}
+}
+
 pub fn (g Ground) draw() {
 	g.gg.draw_rect(g.position.x, g.position.y, g.size.width, g.size.height, gx.black)
 	g.gg.draw_empty_rect(g.bounding_shape.x, g.bounding_shape.y, g.bounding_shape.width,

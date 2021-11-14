@@ -10,6 +10,11 @@ pub struct Player {
 mut:
 	bounding_shape eng.BoundingShape
 	in_air         bool = true
+	is_alive       bool = true
+}
+
+pub fn (mut p Player) die() {
+	p.is_alive = false
 }
 
 pub fn new_player(impulse_tag string, impulse eng.Vec2D, shape eng.BoundingShape, object eng.GameObjectEmbed) Player {
@@ -36,13 +41,13 @@ pub fn (mut p Player) toggle_in_air(val bool) {
 pub fn (p Player) draw() {
 	p.gg.draw_rect(p.position.x, p.position.y, p.size.width, p.size.height, gx.black)
 	p.gg.draw_empty_rect(p.bounding_shape.x, p.bounding_shape.y, p.bounding_shape.width,
-		p.bounding_shape.height, gx.green)
+		p.bounding_shape.height, if p.is_alive { gx.green } else { gx.red })
 }
 
 pub fn (mut p Player) update() {
 	mut gmo := eng.GameObject(p)
 	net_impulse := eng.GameObject(p).net_impulse()
-	
+
 	p.position.x += net_impulse.x
 	p.position.y += net_impulse.y
 
