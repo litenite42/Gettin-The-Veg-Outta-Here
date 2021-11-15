@@ -2,26 +2,31 @@ module engine
 
 import gg
 
+// point in 2D space
 pub struct Point2D {
 pub mut:
 	x f32
 	y f32
 }
 
+// vector in 2D space
 pub struct Vec2D {
 pub mut:
 	x f32
 	y f32
 }
 
+// custom wrapper around gg.Rect
 pub struct Rect {
 	gg.Rect
 }
 
+// gets the upper left and lower right points of a rect
 pub fn (r Rect) to_bounding() (Point2D, Point2D) {
 	return Point2D{r.x, r.y}, Point2D{r.x + r.width, r.y + r.height}
 }
 
+// test if one rectangle overlaps another
 pub fn (r Rect) overlaps(test Rect) bool {
 	l1, r1 := r.to_bounding()
 	l2, r2 := test.to_bounding()
@@ -36,6 +41,7 @@ pub fn (r Rect) overlaps(test Rect) bool {
 	return false
 }
 
+// instantiate a new rectangle
 pub fn new_rect(x f32, y f32, w f32, h f32) Rect {
 	return Rect{
 		x: x
@@ -75,6 +81,7 @@ pub fn (o ObjectCollider) bounds() BoundingShape {
 	return o.bounding_shape
 }
 
+// basic structure that all game objects will use
 pub struct GameObjectEmbed {
 pub:
 	id int
@@ -116,7 +123,7 @@ pub fn (mut g GameObject) clear_forces() {
 pub fn (g GameObject) net_impulse() Vec2D {
 	mut net_impulse := Vec2D{}
 
-	for i, force in g.forces {
+	for _, force in g.forces {
 		net_impulse.x += force.x
 		net_impulse.y += force.y
 	}

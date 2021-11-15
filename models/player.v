@@ -2,7 +2,6 @@ module models
 
 import gg
 import gx
-import math
 import engine as eng
 
 pub struct Player {
@@ -45,7 +44,6 @@ pub fn (p Player) draw() {
 }
 
 pub fn (mut p Player) update() {
-	mut gmo := eng.GameObject(p)
 	net_impulse := eng.GameObject(p).net_impulse()
 
 	p.position.x += net_impulse.x

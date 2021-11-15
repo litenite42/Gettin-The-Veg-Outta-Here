@@ -2,8 +2,6 @@ module models
 
 import gg
 import gx
-import os
-import math
 import engine as eng
 
 [heap]

@@ -3,7 +3,7 @@ module main
 import gg
 import gx
 import os
-import math
+import rand
 import engine as eng
 import models
 
@@ -31,12 +31,15 @@ enum Layer {
 
 struct App {
 mut:
-	gg       &gg.Context
-	image    gg.Image
-	curr_ndx int
-	objects  map[int]eng.GameObject
-	layers   map[Layer][]int
-	state    GameState = .run
+	gg                 &gg.Context
+	image              gg.Image
+	curr_ndx           int
+	objects            map[int]eng.GameObject
+	layers             map[Layer][]int
+	state              GameState = .run
+	curr_floor_offset  int
+	last_layer_spawned Layer
+	same_layer_spawned int
 }
 
 fn (app App) player() ?&models.Player {
@@ -140,7 +143,7 @@ pub fn (mut app App) init_world() {
 		}
 		gg: app.gg
 	)
-	app.layers[.ground] << hole.id
+	app.layers[.hole] << hole.id
 	app.objects[hole.id] = hole
 }
 
@@ -158,6 +161,15 @@ fn (mut app App) death_screen() {
 	app.state = .death_screen
 }
 
+fn (mut app App) toggle_pause() {
+	app.state = if app.state == .run { GameState.pause } else { GameState.run }
+}
+
+fn (mut app App) pause() {
+	app.gg.draw_text_def(win_width / 2, win_height / 2, 'Paused')
+	app.state = .pause
+}
+
 fn (mut app App) update() {
 	mut player := app.player() or { return }
 	mut pbounds := eng.BoundingShape(eng.Rect{})
@@ -165,7 +177,10 @@ fn (mut app App) update() {
 
 	player.update()
 	pbounds = p.bounds()
-
+	if rand.u64() % 120 == 0 {
+		app.spawn_object()
+	}
+	player.toggle_in_air(true)
 	for _, mut elem in app.objects {
 		if elem.id in app.layers[.player] {
 			continue
@@ -213,6 +228,75 @@ fn (mut app App) draw() {
 	}
 	if app.state == .death_screen {
 		app.death_screen()
+	} else if app.state == .pause {
+		app.pause()
+	}
+}
+
+fn (mut app App) spawn_object() {
+	x := rand.u64()
+	mod_5 := x % 5
+	if mod_5 in [u64(0), 1, 2] {
+		layer := Layer.hole
+		if layer == app.last_layer_spawned && app.same_layer_spawned == 3 {
+			return
+		}
+		hole := models.new_hole('default', eng.Vec2D{-1, 0}, eng.Rect{
+			x: win_width + 25
+			y: floor_level
+			width: player_width - 5
+			height: floor_height
+		},
+			id: app.curr_ndx++
+			size: gg.Size{
+				width: player_width + 5
+				height: floor_height
+			}
+			position: eng.Point2D{
+				x: win_width + 20
+				y: floor_level
+			}
+			gg: app.gg
+		)
+		app.layers[.hole] << hole.id
+		app.objects[hole.id] = hole
+		if Layer.hole == app.last_layer_spawned {
+			app.same_layer_spawned++
+		} else {
+			app.last_layer_spawned = layer
+			app.same_layer_spawned = 1
+		}
+	} else if mod_5 == 3 {
+		layer := Layer.ground
+		if layer == app.last_layer_spawned && app.same_layer_spawned == 3 {
+			return
+		}
+		ground := models.new_ground('normal', eng.Vec2D{-1, 0}, eng.Rect{
+			x: win_width + 20
+			y: floor_level + .75 * jump_force.y
+			width: 20
+			height: 15
+		},
+			id: app.curr_ndx++
+			size: gg.Size{
+				width: 20
+				height: 15
+			}
+			position: eng.Point2D{
+				x: win_width + 20
+				y: floor_level + .75 * jump_force.y
+			}
+			gg: app.gg
+		)
+
+		app.layers[.ground] << ground.id
+		app.objects[ground.id] = ground
+		if Layer.ground == app.last_layer_spawned {
+			app.same_layer_spawned++
+		} else {
+			app.last_layer_spawned = layer
+			app.same_layer_spawned = 1
+		}
 	}
 }
 
@@ -230,6 +314,9 @@ fn on_keydown(key gg.KeyCode, mod gg.Modifier, mut app App) {
 
 				xplayer.toggle_in_air(true)
 			}
+		}
+		.p, .enter {
+			app.toggle_pause()
 		}
 		else {}
 	}
