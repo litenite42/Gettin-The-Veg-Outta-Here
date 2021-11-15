@@ -40,6 +40,9 @@ mut:
 	curr_floor_offset  int
 	last_layer_spawned Layer
 	same_layer_spawned int
+	spawn_probability int = 10
+	score             int
+	frame_count       u64
 }
 
 fn (app App) player() ?&models.Player {
@@ -220,6 +223,12 @@ fn (mut app App) update() {
 	} else {
 		gmo.clear_forces()
 	}
+	
+	if app.frame_count % 20 == 0 {
+        app.score++
+	}
+	
+	app.frame_count++
 }
 
 fn (mut app App) draw() {
@@ -231,12 +240,17 @@ fn (mut app App) draw() {
 	} else if app.state == .pause {
 		app.pause()
 	}
+	app.draw_score()
+}
+
+fn (app App) draw_score() {
+    app.gg.draw_text_def(10, 10, 'Score: ${app.score:d}')
 }
 
 fn (mut app App) spawn_object() {
 	x := rand.u64()
-	mod_5 := x % 5
-	if mod_5 in [u64(0), 1, 2] {
+	mod_5 := x % 10
+	if mod_5 < 3 {
 		layer := Layer.hole
 		if layer == app.last_layer_spawned && app.same_layer_spawned == 3 {
 			return
@@ -266,7 +280,7 @@ fn (mut app App) spawn_object() {
 			app.last_layer_spawned = layer
 			app.same_layer_spawned = 1
 		}
-	} else if mod_5 == 3 {
+	} else if mod_5 < 5 {
 		layer := Layer.ground
 		if layer == app.last_layer_spawned && app.same_layer_spawned == 3 {
 			return
