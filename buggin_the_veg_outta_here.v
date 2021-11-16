@@ -40,9 +40,9 @@ mut:
 	curr_floor_offset  int
 	last_layer_spawned Layer
 	same_layer_spawned int
-	spawn_probability int = 10
-	score             int
-	frame_count       u64
+	spawn_probability  int = 10
+	score              int
+	frame_count        u64
 }
 
 fn (app App) player() ?&models.Player {
@@ -177,7 +177,7 @@ fn (mut app App) update() {
 	mut player := app.player() or { return }
 	mut pbounds := eng.BoundingShape(eng.Rect{})
 	p := eng.ObjectCollider(player)
-
+	mut gmo := eng.GameObject(player)
 	player.update()
 	pbounds = p.bounds()
 	if rand.u64() % 120 == 0 {
@@ -198,6 +198,21 @@ fn (mut app App) update() {
 				if player.is_in_air() {
 					player.toggle_in_air(false)
 				}
+				// 				if player.position.x > elem.position.x && player.position.y >= elem.position.y {
+				// 				player.set_position(x: player.position.x,y: elem.position.y - player.size.height)
+				// 				}
+				// 				else
+				if player.position.x + player.size.width >= elem.position.x
+					&& player.position.y + player.size.height > elem.position.y
+					&& player.position.y < elem.position.y + elem.size.height {
+					if 'spush' !in player.forces.keys() {
+						gmo.impulse('spush', x: -1, y: 0)
+					}
+				}
+			} else {
+				if 'spush' in player.forces.keys() {
+					gmo.rmv_impulse('spush')
+				}
 			}
 		}
 		if x is models.Hole {
@@ -214,20 +229,19 @@ fn (mut app App) update() {
 		}
 	}
 
-	mut gmo := eng.GameObject(player)
 	if player.is_in_air() {
 		if player_grav_tag !in player.forces.keys() {
 			gmo.impulse(player_grav_tag, default_force)
 			gmo.rmv_impulse(player_jump_tag)
 		}
 	} else {
-		gmo.clear_forces()
+		gmo.rmv_impulse(player_grav_tag)
 	}
-	
+
 	if app.frame_count % 20 == 0 {
-        app.score++
+		app.score++
 	}
-	
+
 	app.frame_count++
 }
 
@@ -244,17 +258,26 @@ fn (mut app App) draw() {
 }
 
 fn (app App) draw_score() {
-    app.gg.draw_text_def(10, 10, 'Score: ${app.score:d}')
+	app.gg.draw_text_def(10, 10, 'Score: ${app.score:d}')
 }
 
 fn (mut app App) spawn_object() {
 	x := rand.u64()
 	mod_5 := x % 10
-	if mod_5 < 3 {
-		layer := Layer.hole
-		if layer == app.last_layer_spawned && app.same_layer_spawned == 3 {
-			return
-		}
+	mut gmo := eng.GameObject(models.Ground{})
+
+	mut layer := if mod_5 < 3 {
+		Layer.hole
+	} else if mod_5 < 5 {
+		Layer.ground
+	} else {
+		Layer.air
+	}
+
+	if layer == app.last_layer_spawned && app.same_layer_spawned == 3 {
+		return
+	}
+	if layer == .hole {
 		hole := models.new_hole('default', eng.Vec2D{-1, 0}, eng.Rect{
 			x: win_width + 25
 			y: floor_level
@@ -272,19 +295,8 @@ fn (mut app App) spawn_object() {
 			}
 			gg: app.gg
 		)
-		app.layers[.hole] << hole.id
-		app.objects[hole.id] = hole
-		if Layer.hole == app.last_layer_spawned {
-			app.same_layer_spawned++
-		} else {
-			app.last_layer_spawned = layer
-			app.same_layer_spawned = 1
-		}
-	} else if mod_5 < 5 {
-		layer := Layer.ground
-		if layer == app.last_layer_spawned && app.same_layer_spawned == 3 {
-			return
-		}
+		gmo = eng.GameObject(hole)
+	} else if layer == .ground {
 		ground := models.new_ground('normal', eng.Vec2D{-1, 0}, eng.Rect{
 			x: win_width + 20
 			y: floor_level + .75 * jump_force.y
@@ -302,15 +314,18 @@ fn (mut app App) spawn_object() {
 			}
 			gg: app.gg
 		)
+		gmo = eng.GameObject(ground)
+	} else {
+		return
+	}
 
-		app.layers[.ground] << ground.id
-		app.objects[ground.id] = ground
-		if Layer.ground == app.last_layer_spawned {
-			app.same_layer_spawned++
-		} else {
-			app.last_layer_spawned = layer
-			app.same_layer_spawned = 1
-		}
+	app.layers[layer] << gmo.id
+	app.objects[gmo.id] = gmo
+	if layer == app.last_layer_spawned {
+		app.same_layer_spawned++
+	} else {
+		app.last_layer_spawned = layer
+		app.same_layer_spawned = 1
 	}
 }
 

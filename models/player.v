@@ -16,6 +16,12 @@ pub fn (mut p Player) die() {
 	p.is_alive = false
 }
 
+pub fn (mut p Player) set_position(point eng.Point2D) {
+    p.position.x = point.x
+    p.position.y = point.y
+    p.bounding_shape = eng.new_rect(p.position.x, p.position.y, p.size.width, p.size.height)
+}
+
 pub fn new_player(impulse_tag string, impulse eng.Vec2D, shape eng.BoundingShape, object eng.GameObjectEmbed) Player {
 	return Player{
 		id: object.id
