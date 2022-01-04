@@ -195,6 +195,20 @@ fn (mut app App) update() {
 			g := eng.ObjectCollider(x)
 			gbounds = g.bounds()
 			if eng.overlap(gbounds, pbounds) {
+				facing := eng.check_collision(pbounds, gbounds, fn (s1 eng.BoundingShape, s2 eng.BoundingShape) eng.CollisionResult {
+					no_collision_temp := eng.CollisionResult(false)
+					if s1 is eng.Rect {
+						if s2 is eng.Rect {
+							x := s1.collision_side(s2)
+							return eng.CollisionResult(x)
+						} else {
+							return no_collision_temp
+						}
+					} else {
+						return no_collision_temp
+					}
+				})
+
 				if player.is_in_air() {
 					player.toggle_in_air(false)
 				}
