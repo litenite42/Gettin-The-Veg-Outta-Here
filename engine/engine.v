@@ -26,12 +26,49 @@ pub fn (r Rect) to_bounding() (Point2D, Point2D) {
 	return Point2D{r.x, r.y}, Point2D{r.x + r.width, r.y + r.height}
 }
 
+pub enum RectSide {
+	no_collision
+	top
+	right
+	bottom
+	left
+}
+
+fn is_rect_line(l Point2D, r Point2D) bool {
+	return l.x == r.x || l.y == r.y
+}
+
+pub fn (r Rect) collision_side(rr Rect) RectSide {
+	l1, r1 := r.to_bounding()
+	l2, r2 := rr.to_bounding()
+
+	return if r1.x >= l2.x && (l1.y >= l2.y && l1.y <= r2.y) {
+		RectSide.right
+	} else if r1.y >= l2.y && (r1.x >= l2.x && r1.x <= r2.x) {
+		RectSide.top
+	} else if l1.x <= r2.x && (l1.y >= l2.y && l1.y <= r2.y) {
+		RectSide.left
+	} else if r1.y <= l2.y && (r1.x >= l2.x && r1.x <= r2.x) {
+		RectSide.bottom
+	} else {
+		RectSide.no_collision
+	}
+}
+
+pub type CollisionResult = RectSide | bool
+
+pub type CollisionDetector = fn (s1 BoundingShape, s2 BoundingShape) CollisionResult
+
+pub fn check_collision(s1 BoundingShape, s2 BoundingShape, detect CollisionDetector) CollisionResult {
+	return detect(s1, s2)
+}
+
 // test if one rectangle overlaps another
 pub fn (r Rect) overlaps(test Rect) bool {
 	l1, r1 := r.to_bounding()
 	l2, r2 := test.to_bounding()
 
-	if l1.x == r1.x || l1.y == r1.y || l2.x == r2.x || l2.y == r2.y {
+	if is_rect_line(l1, r1) || is_rect_line(l2, r2) {
 		return false
 	}
 
